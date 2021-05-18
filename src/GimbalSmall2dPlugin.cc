@@ -100,10 +100,13 @@ void GimbalSmall2dPlugin::Load(physics::ModelPtr _model,
 void GimbalSmall2dPlugin::Init()
 {
   this->dataPtr->node = transport::NodePtr(new transport::Node());
-  this->dataPtr->node->Init(this->dataPtr->model->GetWorld()->GetName());
-
-  this->dataPtr->lastUpdateTime =
-    this->dataPtr->model->GetWorld()->GetSimTime();
+  #if GAZEBO_MAJOR_VERSION >= 9
+    this->dataPtr->node->Init(this->dataPtr->model->GetWorld()->Name());
+    this->dataPtr->lastUpdateTime = this->dataPtr->model->GetWorld()->SimTime();
+  #else
+    this->dataPtr->node->Init(this->dataPtr->model->GetWorld()->GetName());
+    this->dataPtr->lastUpdateTime = this->dataPtr->model->GetWorld()->GetSimTime();
+  #endif
 
   std::string topic = std::string("~/") +  this->dataPtr->model->GetName() +
     "/gimbal_tilt_cmd";
@@ -132,9 +135,14 @@ void GimbalSmall2dPlugin::OnUpdate()
   if (!this->dataPtr->tiltJoint)
     return;
 
-  double angle = this->dataPtr->tiltJoint->GetAngle(0).Radian();
+  #if GAZEBO_MAJOR_VERSION >= 9
+    double angle = this->dataPtr->tiltJoint->Position(0);
+    common::Time time = this->dataPtr->model->GetWorld()->SimTime();
+  #else
+    double angle = this->dataPtr->tiltJoint->GetAngle(0).Radian();
+    common::Time time = this->dataPtr->model->GetWorld()->GetSimTime();
+  #endif
 
-  common::Time time = this->dataPtr->model->GetWorld()->GetSimTime();
   if (time < this->dataPtr->lastUpdateTime)
   {
     this->dataPtr->lastUpdateTime = time;
